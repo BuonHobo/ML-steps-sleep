@@ -1,0 +1,31 @@
+data_type
+
+1:  steps
+2:  weight (kgs)
+3:  calculated BMI (kg/m2)
+4:  systolic blood pressure (mmHg)
+5:  pulse wave velocity (PWV) , (m/s)
+6:  PWV healthiness (1: low, 2: healthy, 3: too high)
+7:  heart rate avg (bpm)
+8:  heart rate min (bpm)
+9:  heart rate max (bpm)
+10: sleepduration (hours)
+11: bedin 
+12: bedout
+13: nbawake
+14: awakeduration (hours)
+15: time to sleep (hours)
+16: time to wake up (hours)
+17: lightduration (hours)
+18: remduration (hours)
+19: deepduration (hours)
+20: activity type
+21: activity duration (seconds)
+22: activity calories
+23: activity hr average (bpm)
+24: activity hr minimum (bpm)
+25: activity hr maximum (bpm)
+26: steps gait speed (steps/min)
+27: distance gait speed (km/hour)
+
+
