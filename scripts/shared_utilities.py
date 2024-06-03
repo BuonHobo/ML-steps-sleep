@@ -1,3 +1,5 @@
+import os
+
 import keras
 from keras.src.callbacks import EarlyStopping, ModelCheckpoint
 import pandas as pd
@@ -193,7 +195,7 @@ class Model(ABC):
 class KerasModel(Model):
     def __init__(self, path: Path, window=DEFAULT_WINDOW, n_features=DEFAULT_FEATURES, load=False):
         self._path = path
-        if load:
+        if load and os.path.exists(self._path):
             self._model = keras.models.load_model(path)
         else:
             self._model = self._init_model(window, n_features)
