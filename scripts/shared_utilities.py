@@ -39,7 +39,7 @@ class Data(ABC):
         self._prediction_offset = self._get_prediction_offset()
 
     def load_dataset(self):
-        self._data = pd.read_csv(self._dataset)[self._chunk_start:self._chunk_start + self._dataset_chunk].dropna(
+        self._data = pd.read_csv(self._dataset, skiprows=range(1, self._chunk_start), nrows=self._dataset_chunk).dropna(
             subset=["steps"])
 
     def get_dataset(self):
@@ -70,7 +70,7 @@ class Data(ABC):
         self._ready = True
 
     def _make_training_test_data(self):
-        for uuid, group in self.get_dataset().groupby('uuid')[["date", self._step_type, self._sleep_score_type]]:
+        for uuid, group in self.get_dataset().groupby('uuid')[["n_date", self._step_type, self._sleep_score_type]]:
             split = int(len(group) * (1 - self._test_ratio))
             if split < self._window:
                 continue
@@ -126,7 +126,7 @@ class DateStepData(Data):
         return 2
 
     def _get_inputs(self, group):
-        return np.array(group[["date", self._step_type]].values)
+        return np.array(group[["n_date", self._step_type]].values)
 
     def _get_outputs(self, group):
         return np.array(group[[self._step_type]].values)
@@ -151,7 +151,7 @@ class DateStepSleepData(Data):
         return 1
 
     def _get_inputs(self, group):
-        return np.array(group[["date", self._step_type]].values)
+        return np.array(group[["n_date", self._step_type]].values)
 
     def _get_outputs(self, group):
         return np.array(group[[self._sleep_score_type]].values)
@@ -382,7 +382,7 @@ class Visualization(ABC):
         df = self._data.get_dataset()
 
         counter = 0
-        for uuid, group in df.groupby('uuid')[["date", self._step_type, self._sleep_type]]:
+        for uuid, group in df.groupby('uuid')[["n_date", self._step_type, self._sleep_type]]:
             if len(group) < 2 * self._window:
                 continue
 
@@ -404,17 +404,17 @@ class Visualization(ABC):
 class DateStepForecastVisualization(Visualization):
 
     def _visualize_group(self, uuid, group):
-        group = group[["date", self._step_type]]
+        group = group[["n_date", self._step_type]]
 
         plt.title(f"Forecast for user {uuid}")
-        plt.xlabel("Date")
+        plt.xlabel("n_date")
         plt.ylabel(self._step_type)
 
-        plt.plot(group.date.values[:-self._window], group[self._step_type].values[:-self._window], label="facts")
-        plt.plot(group.date.values[-self._window:], group[self._step_type].values[-self._window:], label="truth")
+        plt.plot(group["n_date"].values[:-self._window], group[self._step_type].values[:-self._window], label="facts")
+        plt.plot(group["n_date"].values[-self._window:], group[self._step_type].values[-self._window:], label="truth")
 
-        avg_timestep = (group.date.max() - group.date.min()) / len(group)
-        max_timestep = group.date[:-self._window].max()
+        avg_timestep = (group["n_date"].max() - group["n_date"].min()) / len(group)
+        max_timestep = group["n_date"][:-self._window].max()
 
         prediction_data = group.values[:-self._window]
         for step in range(self._window):
@@ -431,13 +431,13 @@ class DateStepForecastVisualization(Visualization):
 class DateStepPredictionVisualization(Visualization):
 
     def _visualize_group(self, uuid, group):
-        group = group[["date", self._step_type]]
+        group = group[["n_date", self._step_type]]
 
         plt.title(f"Prediction for user {uuid}")
-        plt.xlabel("Date")
+        plt.xlabel("n_date")
         plt.ylabel(self._step_type)
 
-        plt.plot(group.date.values, group[self._step_type].values, label="facts")
+        plt.plot(group["n_date"].values, group[self._step_type].values, label="facts")
 
         prediction_data = []
 
@@ -446,18 +446,18 @@ class DateStepPredictionVisualization(Visualization):
 
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
-        plt.plot(group.date.values[self._window:], prediction_data, label="prediction")
+        plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
 
 
 class DateStepPredictionForecastVisualization(Visualization):
     def _visualize_group(self, uuid, group):
-        group = group[["date", self._step_type]]
+        group = group[["n_date", self._step_type]]
 
         plt.title(f"Prediction + Forecast for user {uuid}")
-        plt.xlabel("Date")
+        plt.xlabel("n_date")
         plt.ylabel(self._step_type)
 
-        plt.plot(group.date.values, group[self._step_type].values, label="facts")
+        plt.plot(group["n_date"].values, group[self._step_type].values, label="facts")
 
         prediction_data = []
 
@@ -466,10 +466,10 @@ class DateStepPredictionForecastVisualization(Visualization):
 
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
-        plt.plot(group.date.values[self._window:], prediction_data, label="prediction")
+        plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
 
-        avg_timestep = (group.date.max() - group.date.min()) / len(group)
-        max_timestep = group.date.max()
+        avg_timestep = (group["n_date"].max() - group["n_date"].min()) / len(group)
+        max_timestep = group["n_date"].max()
 
         prediction_data = group.values
         for step in range(self._window):
@@ -485,45 +485,45 @@ class DateStepPredictionForecastVisualization(Visualization):
 
 class DateSleepPredictionVisualization(Visualization):
     def _visualize_group(self, uuid, group):
-        group = group[["date", self._sleep_type, self._step_type]]
+        group = group[["n_date", self._sleep_type, self._step_type]]
 
         plt.title(f"Prediction for user {uuid}")
-        plt.xlabel("Date")
+        plt.xlabel("n_date")
         plt.ylabel(self._sleep_type)
 
-        plt.plot(group.date.values, group[self._sleep_type].values, label="facts")
+        plt.plot(group["n_date"].values, group[self._sleep_type].values, label="facts")
 
         prediction_data = []
 
         for i in range(self._window, len(group)):
-            prediction_data.append(group[["date", self._step_type]][i - self._window:i])
+            prediction_data.append(group[["n_date", self._step_type]][i - self._window:i])
 
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
-        plt.plot(group.date.values[self._window:], prediction_data, label="prediction")
+        plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
 
 
 class DateSleepStepPredictionVisualization(Visualization):
     def _visualize_group(self, uuid, group):
-        group = group[["date", self._sleep_type, self._step_type]]
+        group = group[["n_date", self._sleep_type, self._step_type]]
 
         steps = plt.subplot(2, 1, 2)
         plt.ylabel(self._step_type)
-        plt.plot(group.date, group[self._step_type])
-        plt.xlabel("date")
+        plt.plot(group["n_date"], group[self._step_type])
+        plt.xlabel("n_date")
 
         plt.subplot(2, 1, 1, sharex=steps)
         plt.title(f"Prediction for user {uuid}")
-        plt.xlabel("Date")
+        plt.xlabel("n_date")
         plt.ylabel(self._sleep_type)
 
-        plt.plot(group.date.values, group[self._sleep_type].values, label="facts")
+        plt.plot(group["n_date"].values, group[self._sleep_type].values, label="facts")
 
         prediction_data = []
 
         for i in range(self._window, len(group)):
-            prediction_data.append(group[["date", self._step_type]][i - self._window:i])
+            prediction_data.append(group[["n_date", self._step_type]][i - self._window:i])
 
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
-        plt.plot(group.date.values[self._window:], prediction_data, label="prediction")
+        plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
