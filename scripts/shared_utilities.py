@@ -207,8 +207,8 @@ class KerasModel(Model):
 
     def fit(self, xs, ys):
         return self._model.fit(xs, ys, epochs=20, verbose=1, validation_split=.2,
-                               callbacks=[EarlyStopping(monitor='val_r2_score', patience=5),
-                                          ModelCheckpoint(filepath='best_model.keras', monitor='val_r2_score',
+                               callbacks=[EarlyStopping(monitor='val_loss', patience=5),
+                                          ModelCheckpoint(filepath='best_model.keras', monitor='val_loss',
                                                           save_best_only=True)])
 
     def predict(self, x):
@@ -262,7 +262,7 @@ class KerasCNNModel(KerasModel):
             old = keras.layers.Conv1D(filters=20, kernel_size=2, padding="causal",
                                       activation="relu", dilation_rate=rate)(old)
         flatten = keras.layers.Flatten()(old)
-        output = keras.layers.Dense(1)(flatten)
+        output = keras.layers.Dense(1,activity_regularizer=keras.regularizers.L2(0.01))(flatten)
 
         model = keras.Model(inputs=inputs, outputs=output)
         return model
@@ -527,3 +527,26 @@ class DateSleepStepPredictionVisualization(Visualization):
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
         plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
+
+class SleepStepPredictionVisualization(Visualization):
+    def _visualize_group(self, uuid, group):
+        group = group[[self._sleep_type, self._step_type]]
+
+        steps = plt.subplot(2, 1, 2)
+        plt.ylabel(self._step_type)
+        plt.plot(range(len(group)), group[self._step_type])
+
+        plt.subplot(2, 1, 1, sharex=steps)
+        plt.title(f"Prediction for user {uuid}")
+        plt.ylabel(self._sleep_type)
+
+        plt.plot(range(len(group)), group[self._sleep_type].values, label="facts")
+
+        prediction_data = []
+
+        for i in range(self._window, len(group)):
+            prediction_data.append(group[[self._step_type]][i - self._window:i])
+
+        prediction_data = self._model.predict_batch(np.array(prediction_data))
+
+        plt.plot(range(self._window,len(group)), prediction_data, label="prediction")
