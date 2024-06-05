@@ -262,7 +262,7 @@ class KerasCNNModel(KerasModel):
             old = keras.layers.Conv1D(filters=20, kernel_size=2, padding="causal",
                                       activation="relu", dilation_rate=rate)(old)
         flatten = keras.layers.Flatten()(old)
-        output = keras.layers.Dense(1,activity_regularizer=keras.regularizers.L2(0.01))(flatten)
+        output = keras.layers.Dense(1, activity_regularizer=keras.regularizers.L2(0.01))(flatten)
 
         model = keras.Model(inputs=inputs, outputs=output)
         return model
@@ -382,7 +382,11 @@ class Visualization(ABC):
         df = self._data.get_dataset()
 
         counter = 0
-        for uuid, group in df.groupby('uuid')[["n_date", self._step_type, self._sleep_type]]:
+        if (mean := "m" + self._sleep_type) in df.keys():
+            relevant = ["n_date", self._step_type, self._sleep_type, mean]
+        else:
+            relevant = ["n_date", self._step_type, self._sleep_type]
+        for uuid, group in df.groupby('uuid')[relevant]:
             if len(group) < 2 * self._window:
                 continue
 
@@ -528,6 +532,37 @@ class DateSleepStepPredictionVisualization(Visualization):
 
         plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
 
+
+class DateMeanSleepStepPredictionVisualization(Visualization):
+    def _visualize_group(self, uuid, group):
+        full = group
+        group = group[["n_date", self._sleep_type, self._step_type]]
+
+        steps = plt.subplot(2, 1, 2)
+        plt.ylabel(self._step_type)
+        plt.plot(group["n_date"], group[self._step_type])
+        plt.xlabel("n_date")
+
+        plt.subplot(2, 1, 1, sharex=steps)
+        plt.title(f"Prediction for user {uuid}")
+        plt.xlabel("n_date")
+        plt.ylabel(self._sleep_type)
+
+        plt.plot(group["n_date"].values, group[self._sleep_type].values, label="facts")
+
+        if "m" + self._sleep_type in full.keys():
+            plt.plot(full["n_date"].values, full["m" + self._sleep_type].values, label="average")
+
+        prediction_data = []
+
+        for i in range(self._window, len(group)):
+            prediction_data.append(group[["n_date", self._step_type]][i - self._window:i])
+
+        prediction_data = self._model.predict_batch(np.array(prediction_data))
+
+        plt.plot(group["n_date"].values[self._window:], prediction_data, label="prediction")
+
+
 class SleepStepPredictionVisualization(Visualization):
     def _visualize_group(self, uuid, group):
         group = group[[self._sleep_type, self._step_type]]
@@ -549,4 +584,4 @@ class SleepStepPredictionVisualization(Visualization):
 
         prediction_data = self._model.predict_batch(np.array(prediction_data))
 
-        plt.plot(range(self._window,len(group)), prediction_data, label="prediction")
+        plt.plot(range(self._window, len(group)), prediction_data, label="prediction")
