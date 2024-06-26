@@ -370,7 +370,7 @@ class Utilities:
 
 
 class Visualization(ABC):
-    def __init__(self, model: Model, data: Data, users: int = 50):
+    def __init__(self, model: Model, data: Data, users: int = 15):
         self._model = model
         self._data = data
         self.users = users
