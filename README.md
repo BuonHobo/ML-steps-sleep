@@ -23,7 +23,6 @@ Nel farlo ho anche avuto modo di familiarizzare con gli strumenti principali del
   - Standardizzazione
   - Normalizzazione
   - Sliding windows
-  - 
 - Keras
   - CNN
   - RNN (LSTM)
