@@ -1,4 +1,5 @@
 # Introduzione
+Questa è la relazione sul progetto di Machine Learning di Alex Bonini (559298), per il corso tenuto nell'anno accademico 2023/2024.
 ## Obiettivo
 Lo scopo del progetto è quello di utilizzare la serie temporale dei passi di un utente per cercare di fare previsioni sul suo benessere, indicato dalla qualità del sonno.
 Ho quindi ottenuto una grande quantità di dati sui passi e su metriche relative al sonno. 
